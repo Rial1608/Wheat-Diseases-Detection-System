@@ -6,10 +6,14 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 import importlib.util
+from typing import Tuple, Optional, Dict, Any
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, send_file, session
 import numpy as np
 import cv2
+
+# Import configuration
+from config import config
 
 # ============================================
 # SYSTEM INITIALIZATION & VALIDATION
@@ -94,7 +98,7 @@ except Exception as e:
 print(f"\n[Paths & Directories Check]")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WHEAT_DIR = os.path.join(BASE_DIR, 'wheat-disease-detection')
-MODEL_PATH = os.path.join(WHEAT_DIR, 'results', 'wheat_disease_model.h5')
+MODEL_PATH = config.get_model_path()
 
 print(f"Base Directory: {BASE_DIR}")
 print(f"Model Path: {MODEL_PATH}")
@@ -116,22 +120,20 @@ else:
 
 print(f"\n[Flask Initialization]")
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.secret_key = 'wheat_disease_detection_secret_key_2024'
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')  # Store inside static folder
-app.config['RESULTS_FOLDER'] = os.path.join(BASE_DIR, 'static', 'results')
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
+app.config.from_object(config)
+app.secret_key = config.SECRET_KEY
+app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
+app.config['UPLOAD_FOLDER'] = config.get_upload_folder()
+app.config['RESULTS_FOLDER'] = config.get_results_folder()
+app.config['ALLOWED_EXTENSIONS'] = config.ALLOWED_EXTENSIONS
 
-# Create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
-os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 print(f"✓ Flask app configured")
 print(f"✓ Upload folder: {app.config['UPLOAD_FOLDER']}")
+print(f"✓ Environment: {'PRODUCTION' if not config.DEBUG else 'DEVELOPMENT'}")
 
 # Model configuration
-CLASS_NAMES = ['Healthy', 'Brown_rust', 'Yellow_rust']
-INPUT_SHAPE = (224, 224, 3)
+CLASS_NAMES = config.CLASS_NAMES
+INPUT_SHAPE = config.INPUT_SHAPE
 
 # ============================================
 # MODEL LOADING
@@ -141,7 +143,30 @@ print(f"\n[Model Loading Check]")
 MODEL = None
 MODEL_READY = False
 
-def load_model_once():
+def validate_upload_path(upload_folder: str, filename: str) -> Optional[str]:
+    """
+    Validate that the file path stays within the upload folder.
+    Prevents path traversal attacks.
+    
+    Args:
+        upload_folder: The base upload directory
+        filename: The filename to validate
+        
+    Returns:
+        Safe filepath if valid, None otherwise
+    """
+    # Get absolute paths
+    base_abs = os.path.abspath(upload_folder)
+    file_abs = os.path.abspath(os.path.join(upload_folder, filename))
+    
+    # Ensure the file path is within the upload folder
+    if not file_abs.startswith(base_abs):
+        return None
+    
+    return file_abs
+
+def load_model_once() -> bool:
+    """Load the model once and cache in memory."""
     global MODEL, MODEL_READY
     
     if MODEL is not None:
@@ -189,7 +214,7 @@ print("="*70 + "\n")
 prediction_history = []
 
 
-def get_last_conv_layer_name(model):
+def get_last_conv_layer_name(model) -> Optional[str]:
     """Find the last convolutional layer in the model"""
     for layer in reversed(model.layers):
         if 'conv' in layer.name.lower():
@@ -201,12 +226,12 @@ def get_last_conv_layer_name(model):
 # ============================================
 
 @app.route('/')
-def index():
+def index() -> str:
     """Main upload page"""
     return render_template('index.html')
 
 @app.route('/api/predict', methods=['POST'])
-def predict():
+def predict() -> Tuple[Dict[str, Any], int]:
     """API endpoint for disease prediction"""
     try:
         # Check if TensorFlow is available
@@ -230,11 +255,16 @@ def predict():
         if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
             return jsonify({'error': 'Invalid file type. Allowed: jpg, jpeg, png'}), 400
         
-        # Save uploaded file
+        # Save uploaded file with security validation
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
         filename = timestamp + filename
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Validate path to prevent directory traversal
+        filepath = validate_upload_path(app.config['UPLOAD_FOLDER'], filename)
+        if filepath is None:
+            return jsonify({'error': 'Invalid filename'}), 400
+            
         file.save(filepath)
         
         # Prepare image for prediction

@@ -1,0 +1,58 @@
+# Virtual Environments
+.venv/
+.venv1/
+venv/
+env/
+tfenv/
+ENV/
+.venv1_old/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & Configuration
+.env
+.env.local
+
+# Data (keeping dataset/ excluded for training)
+dataset/
+
+# Model Files (keep tracked in repo if needed)
+*.h5
+*.pt
+*.pth
+*.pkl
+
+# Uploads & Results
+static/uploads/*
+static/results/*
+uploads/*
+results/*
+!.gitkeep
+
+# Logs & Temp Files
+*.log
+*.tmp
+*.bak
+*.temp
+
+# Node (if used)
+node_modules/

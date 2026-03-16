@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 Wheat Disease Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="agriculture-bg">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top border-bottom border-success">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-leaf text-success"></i> Wheat Disease Detection System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-upload"></i> Upload
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/results">
+                            <i class="fas fa-chart-bar"></i> Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <!-- Header Section -->
+        <div class="row mb-5">
+            <div class="col-lg-8 mx-auto">
+                <div class="hero-section text-center">
+                    <h1 class="display-4 fw-bold text-success mb-3">
+                        🌾 AI Wheat Disease Detection
+                    </h1>
+                    <p class="lead text-muted">
+                        Harness the power of artificial intelligence to detect wheat diseases with precision and accuracy.
+                    </p>
+                    <p class="text-secondary smaller-text">
+                        Upload wheat leaf images and get instant disease detection using advanced CNN deep learning models.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-lg border-0 upload-card">
+                    <div class="card-body p-5">
+                        
+                        <!-- Upload Section -->
+                        <h3 class="card-title mb-4 text-center">
+                            <i class="fas fa-image text-success"></i> Upload Wheat Leaf Image
+                        </h3>
+
+                        <!-- File Input Area -->
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt text-success display-4 mb-3"></i>
+                                <h5 class="mb-2">Drag & Drop Your Image Here</h5>
+                                <p class="text-muted mb-3">or click to browse</p>
+                                <p class="small text-secondary">Supported formats: JPG, JPEG, PNG (Max 16MB)</p>
+                            </div>
+                            <input type="file" id="fileInput" class="d-none" accept=".jpg,.jpeg,.png" />
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div id="previewContainer" class="d-none mt-4">
+                            <div class="row">
+                                <div class="col-md-6 mx-auto">
+                                    <div class="preview-box">
+                                        <img id="previewImage" src="" alt="Preview" class="img-fluid rounded">
+                                    </div>
+                                    <p class="text-center mt-2 small text-muted">
+                                        <strong id="fileName"></strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4 text-center">
+                            <button type="button" class="btn btn-lg btn-success me-2" id="detectBtn" disabled>
+                                <i class="fas fa-magic"></i> Detect Disease
+                            </button>
+                            <button type="button" class="btn btn-lg btn-outline-secondary" id="resetBtn" disabled>
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+
+                        <!-- Loading Spinner -->
+                        <div id="loadingSpinner" class="mt-4 d-none text-center">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Analyzing wheat leaf image...</p>
+                        </div>
+
+                        <!-- Error Alert -->
+                        <div id="errorAlert" class="alert alert-danger d-none mt-4" role="alert">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span id="errorMessage"></span>
+                        </div>
+
+                        <!-- Success Alert -->
+                        <div id="successAlert" class="alert alert-success d-none mt-4" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="successMessage">Prediction completed successfully!</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Information Cards -->
+                <div class="row mt-5">
+                    <div class="col-md-6 mb-3">
+                        <div class="info-card">
+                            <h5 class="card-title">
+                                <i class="fas fa-lightbulb text-warning"></i> How It Works
+                            </h5>
+                            <ul class="small mb-0">
+                                <li>Upload a wheat leaf image</li>
+                                <li>AI model analyzes the image</li>
+                                <li>Get disease prediction & confidence</li>
+                                <li>View Grad-CAM visualization</li>
+                                <li>Receive treatment recommendations</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-card">
+                            <h5 class="card-title">
+                                <i class="fas fa-shield-alt text-info"></i> Supported Diseases
+                            </h5>
+                            <ul class="small mb-0">
+                                <li><span class="badge bg-success">Healthy</span> - No disease detected</li>
+                                <li><span class="badge bg-warning text-dark">Brown Rust</span> - Fungal infection</li>
+                                <li><span class="badge bg-danger">Yellow Rust</span> - Stripe rust disease</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Features Section -->
+    <div class="bg-light py-5 mt-5 border-top">
+        <div class="container">
+            <h2 class="text-center mb-4 fw-bold">Platform Features</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h5>AI-Powered Detection</h5>
+                        <p>Advanced CNN deep learning model trained on thousands of wheat leaf images</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-expand"></i>
+                        </div>
+                        <h5>Grad-CAM Visualization</h5>
+                        <p>See exactly which regions of the leaf the AI detected as diseased</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h5>PDF Reports</h5>
+                        <p>Download comprehensive analysis reports with recommendations</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h5>Analytics Dashboard</h5>
+                        <p>Track predictions and view disease distribution statistics</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <h5>Severity Estimation</h5>
+                        <p>Estimate infected leaf area percentage and severity level</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-pills"></i>
+                        </div>
+                        <h5>Treatment Advice</h5>
+                        <p>Get disease-specific prevention and treatment recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-1">🌾 Wheat Disease Detection System</p>
+            <p class="small text-muted mb-0">© 2024 Agricultural AI Solutions. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+</body>
+</html>

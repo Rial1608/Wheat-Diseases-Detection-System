@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Results - Wheat Disease Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="agriculture-bg">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top border-bottom border-success">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-leaf text-success"></i> Wheat Disease Detection System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-upload"></i> Upload
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/results">
+                            <i class="fas fa-chart-bar"></i> Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        {% if prediction %}
+
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-lg-10 mx-auto">
+                <h1 class="display-5 fw-bold text-success mb-2">
+                    <i class="fas fa-check-circle"></i> Prediction Results
+                </h1>
+                <p class="text-muted">Detailed analysis of your wheat leaf image</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                
+                <!-- Main Results Card -->
+                <div class="card shadow-lg border-0 mb-4 results-card">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h3 class="card-title mb-3">
+                                    Detection Result
+                                </h3>
+                                <div class="result-item mb-3">
+                                    <label class="result-label">Predicted Disease:</label>
+                                    <div class="result-value">
+                                        <span class="badge bg-danger" style="font-size: 18px; padding: 10px 15px; font-weight: bold;">
+                                            {{ prediction['predicted_disease'] }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="result-item mb-3">
+                                    <label class="result-label">Confidence Score:</label>
+                                    <div class="result-value">
+                                        <strong>{{ prediction['confidence_percentage'] }}</strong>
+                                        <div class="progress mt-2" style="height: 20px;">
+                                            <div class="progress-bar bg-success" style="width: {{ prediction['confidence'] * 100 }}%;">
+                                                {{ prediction['confidence'] * 100 | int }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="result-item mb-3">
+                                    <label class="result-label">Severity Level:</label>
+                                    <div class="result-value">
+                                        <span class="badge bg-warning text-dark">
+                                            {{ prediction['severity_level'] }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="result-item">
+                                    <label class="result-label">Infected Leaf Area:</label>
+                                    <div class="result-value">
+                                        <strong>{{ prediction['severity_percentage'] }}%</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <small>
+                                        <strong>File:</strong> {{ prediction['original_filename'] }}<br>
+                                        <strong>Time:</strong> {{ prediction['timestamp'][:10] }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images Section -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-images"></i> Image Analysis</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="analysis-image-container mb-3">
+                                    <img src="{{ url_for('static', filename='uploads/' + prediction['image_name']) }}" 
+                                         alt="Original Image" class="img-fluid rounded border" style="max-height: 400px; object-fit: cover; width: 100%;">
+                                    <p class="text-muted small mt-2 text-center">
+                                        <strong>Original Image</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                {% if prediction['gradcam_image'] %}
+                                <div class="analysis-image-container mb-3">
+                                    <img src="{{ url_for('static', filename='results/' + prediction['gradcam_image']) }}" 
+                                         alt="Grad-CAM Analysis" class="img-fluid rounded border" style="max-height: 400px; object-fit: cover; width: 100%;">
+                                    <p class="text-muted small mt-2 text-center">
+                                        <strong>Grad-CAM Heatmap Analysis</strong><br>
+                                        <small>Red/yellow areas indicate disease detection zones</small>
+                                    </p>
+                                </div>
+                                {% else %}
+                                <div class="analysis-image-container mb-3 bg-light border rounded p-5 text-center d-flex align-items-center justify-content-center" style="height: 400px;">
+                                    <div>
+                                        <i class="fas fa-image text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                                        <p class="text-muted mt-3">
+                                            <small>Grad-CAM visualization will be generated during analysis</small>
+                                        </p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Probability Distribution -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Probability Distribution</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div id="probabilityChart-container">
+                                    <canvas id="probabilityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-list"></i> Prediction Details</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="list-group list-group-flush">
+                                    {% set all_predictions = prediction['all_predictions'] %}
+                                    {% for disease, prob in all_predictions.items() | list | sort(attribute='1', reverse=true) %}
+                                    <div class="list-group-item px-0 py-3 border-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>{{ disease }}</span>
+                                            <span class="badge bg-info">{{ (prob * 100) | round(1) }}%</span>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 8px;">
+                                            <div class="progress-bar bg-info" 
+                                                 style="width: {{ prob * 100 }}%;"></div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disease Information -->
+                {% set disease_info = prediction['disease_info'] %}
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-book"></i> Disease Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-2">{{ disease_info['scientific_name'] }}</h6>
+                        <p>{{ disease_info['description'] }}</p>
+
+                        {% if disease_info.get('symptoms') %}
+                        <h6 class="fw-bold mt-3 mb-2"><i class="fas fa-stethoscope"></i> Symptoms:</h6>
+                        <ul>
+                            {% for symptom in disease_info['symptoms'] %}
+                            <li>{{ symptom }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        {% if disease_info.get('causes') and disease_info['causes'] is iterable and disease_info['causes'] is not string %}
+                        <h6 class="fw-bold mt-3 mb-2"><i class="fas fa-virus"></i> Causes:</h6>
+                        <ul>
+                            {% for cause in disease_info['causes'] %}
+                            <li>{{ cause }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Treatment Recommendations -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-prescription-bottle"></i> Treatment & Prevention</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="recommendations-list">
+                            {% set recommendations = prediction['treatment_recommendations'] %}
+                            {% for recommendation in recommendations %}
+                            <div class="recommendation-item mb-3 pb-3 border-bottom">
+                                <div class="d-flex">
+                                    <div class="recommendation-number">
+                                        <span class="badge bg-success">{{ loop.index }}</span>
+                                    </div>
+                                    <div class="ms-3 flex-grow-1">
+                                        <p class="mb-0">{{ recommendation }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-lg btn-success me-2" id="downloadReportBtn">
+                            <i class="fas fa-file-pdf"></i> Download PDF Report
+                        </button>
+                        <a href="/" class="btn btn-lg btn-outline-secondary">
+                            <i class="fas fa-plus"></i> Upload Another Image
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        {% else %}
+
+        <!-- No Prediction -->
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-lg border-0 text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-search display-1 text-muted mb-3"></i>
+                        <h3 class="mb-3">No Predictions Yet</h3>
+                        <p class="text-muted">Upload an image to see prediction results here.</p>
+                        <a href="/" class="btn btn-lg btn-success">
+                            <i class="fas fa-upload"></i> Go to Upload Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-1">🌾 Wheat Disease Detection System</p>
+            <p class="small text-muted mb-0">© 2024 Agricultural AI Solutions. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="{{ url_for('static', filename='js/results.js') }}"></script>
+</body>
+</html>
